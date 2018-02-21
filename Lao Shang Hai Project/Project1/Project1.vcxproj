@@ -40,8 +40,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Matt\Documents\Visual Studio 2013\Projects\LazyFoo\deps\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Matt\Documents\Visual Studio 2013\Projects\LazyFoo\deps\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\matweste\Documents\LSH\Lao Shang Hai Working Assets\Lao Shang Hai Project\deps;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\matweste\Documents\LSH\Lao Shang Hai Working Assets\Lao Shang Hai Project\deps\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

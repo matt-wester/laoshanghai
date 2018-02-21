@@ -1,6 +1,6 @@
 //Using SDL and standard IO
-#include <SDL\SDL.h>
-#include <SDL\SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 #include <stdio.h>
 #include <string>
 #include <ctime>
@@ -30,7 +30,7 @@ const int NUMBER_OF_SYMBOL_SPRITES = 10;
 //Reel Increment/Speed
 const int reelSpeed = 10000;
 
-//Reel destination variables
+//Testing Reel destination variables
 /*
 int reelOneDestination = 20000;
 int reelTwoDestination = 660000;
@@ -111,7 +111,7 @@ private:
 	int _xReelPos, _yReelPos;
 	int _ySymbolSetOffset;
 	
-	//The reel array that the reel object will use to determine the symbols in the symbol set
+	//The reel array of characters that the reel object will use to determine the symbols in the symbol set
 	char _reelArray[SYMBOLS_PER_REEL];
 
 };
@@ -395,14 +395,14 @@ bool loadMedia(){
 
 		
 	//load ReelStrip texture
-	if (!gReelStripTexture.loadFromFile("10_color_keying/reelstrip.png", gRenderer))
+	if (!gReelStripTexture.loadFromFile("visualassets/reelstrip.png", gRenderer))
 	{
 		printf("Failed to load reel strip texture!\n");
 	}
 	
 		
 	//Load background texture
-	if (!gBackgroundTexture.loadFromFile("10_color_keying/background.png",gRenderer))
+	if (!gBackgroundTexture.loadFromFile("visualassets/background.png",gRenderer))
 	{
 		printf("Failed to load background texture image!\n");
 		success = false;
@@ -410,7 +410,7 @@ bool loadMedia(){
 
 	
 	//Load Symbol Sheet texture
-	if (!gSymbolSheetTexture.loadFromFile("symbols/SYMBOLSHEET.png", gRenderer))
+	if (!gSymbolSheetTexture.loadFromFile("visualassets/SYMBOLSHEET.png", gRenderer))
 	{
 		printf("Failed to load symbol sheet texture image!\n");
 		success = false;
@@ -602,8 +602,8 @@ SDL_Texture* loadTexture(std::string path)
 //Reel Constructor Function
 Reel::Reel(int GivenXReelPos, char passedReelArray[])
 {
-	//When a reel is constructed, we have to give it the x Position it will live in. This never changes.
-	//We also set the default height on all reels to 2000 (200 after it's divided)
+	//When a reel is constructed, we have to give it the x Position it will live in so that the reels are seperated horizontally from one another. This never changes.
+	//We also set the default height on all reels to 2000 (200 after it's divided) since all the reels start in the same vertical position.
 	_xReelPos = GivenXReelPos;
 	_yReelPos = 2000;
 
