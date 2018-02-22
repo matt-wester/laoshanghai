@@ -67,6 +67,20 @@ const char SYMBOL_TEN = 'T';
 const char SYMBOL_NINE = 'N';
 
 
+//Betting Definitions
+
+// Variable that tracks the Player's total credits |Player starts with 10,000 credits
+const int playerCredit = 10000;
+
+// Variable that tracks how many lines the player is betting | Defaults to 1 line bet (minimum)
+const int playerSelectedLine = 1;
+
+// Defaults to 1x bet multiplier
+const int playerBetMultiplier = 1;
+
+// Value that stores the last winning amount to show "WIN"
+const int lastWin = 0;
+
 ////////////////////////////////////// Prototyped Functions //////////////////////////////////////
 
 //Start up SDL and create a window
@@ -152,6 +166,9 @@ LTexture gBackgroundTexture;
 //Reel Strip Texture
 LTexture gReelStripTexture;
 
+//Test Text Texture
+LTexture gTextTexture;
+
 //Symbol Sheet Texture
 LTexture gSymbolSheetTexture;
 
@@ -212,7 +229,7 @@ int main(int argc, char* args[])
 						}
 
 						/*
-						switch (e.key.keysym.sym)
+						Starts monitoring for keystrokes here:
 						*/
 
 						switch (e.type)
@@ -220,7 +237,6 @@ int main(int argc, char* args[])
 						{
 						case SDLK_DOWN:
 							reelOnePosition += reelSpeed;  break;
-
 
 						case SDLK_UP:
 							reelOnePosition -= reelSpeed;  break;
@@ -315,8 +331,8 @@ int main(int argc, char* args[])
 								while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == false)
 								{
 
-									//Move all the reels until reel one reaches its destination
-									//Once the first reel reaches its destination, mark it as stopped
+									//Move all the reels until reel four reaches its destination
+									//Once the fourth reel reaches its destination, mark it as stopped
 									if (reelFourPosition == reelFourDestination || reelFourPosition == reelFourDestination + (SYMBOL_SET_LENGTH * 100))
 									{
 										reelFourStop = true;
@@ -332,7 +348,7 @@ int main(int argc, char* args[])
 								while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == true && reelFiveStop == false)
 								{
 
-									//Move all the reels until reel one reaches its destination
+									//Move all the reels until reel five reaches its destination
 									//Once the first reel reaches its destination, mark it as stopped
 									if (reelFivePosition == reelFiveDestination || reelFivePosition == reelFiveDestination + (SYMBOL_SET_LENGTH * 100))
 									{
@@ -377,6 +393,9 @@ int main(int argc, char* args[])
 					//Render background texture to screen
 					gBackgroundTexture.render(0, 0, gRenderer);
 
+					//Render test text to screen
+					gTextTexture.render(300, 500, gRenderer);
+
 					//Update screen
 					SDL_RenderPresent(gRenderer);
 					
@@ -391,14 +410,38 @@ int main(int argc, char* args[])
 	
 
 bool loadMedia(){
+
 	//Loading success flag
 	bool success = true;
 
+	//Load Font
+	
+	gFont = TTF_OpenFont("visualassets/lazy.ttf", 28);
+	if (gFont == NULL)
+	{
+		printf("Failed to load font! SDL_ttf Error: %S\n", TTF_GetError());
+		success = false;
 		
+	}
+	else
+	{
+
+		//Render and Load Static text
+		SDL_Color textColor = { 0, 0, 0 };
+		if (!gTextTexture.loadFromRenderedText(gFont, "The quick brown fox jumps over the lazy dog", textColor, gRenderer))
+		{
+			printf("Failed to render text texture!\n");
+			success = false;
+		}
+
+	}
+
+
 	//load ReelStrip texture
 	if (!gReelStripTexture.loadFromFile("visualassets/reelstrip.png", gRenderer))
 	{
 		printf("Failed to load reel strip texture!\n");
+		success = false;
 	}
 	
 		
@@ -422,6 +465,9 @@ bool loadMedia(){
 		printf("Failed to clip symbol texture image!\n");
 		success = false;
 	}
+
+
+	
 	
 	void close();
 
@@ -431,7 +477,7 @@ bool loadMedia(){
 
 bool init()
 
-{
+	{
 
 	//Initialization Flag
 	bool success = true;
@@ -444,8 +490,10 @@ bool init()
 		SDL_Delay(2000);
 		success = false;
 	}
+	
 	else
-	{
+
+	
 		//Create window
 		gWindow = SDL_CreateWindow("Old Shanghai", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 		if (gWindow == NULL)
@@ -454,12 +502,13 @@ bool init()
 			SDL_Delay(2000);
 			success = false;
 		}
-		else{
+		else
+		{
 			//Create renderer for window
 			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 			if (gRenderer == NULL)
 			{
-				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
+				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
 				success = false;
 			}
 			else
@@ -476,14 +525,23 @@ bool init()
 				}
 				else
 				{
+					
+					if (TTF_Init() < 0)
+					{
+
+						printf("SDL_TTF could not be initialized! SDL_ttf Error: %s\n",TTF_GetError());
+						success = false;
+
+					}
+
+					else
+						
 					//Get window surface
 					gScreenSurface = SDL_GetWindowSurface(gWindow);
 				}
 			}
-
-
 		}
-	}
+	
 	return success;
 
 }
@@ -553,6 +611,10 @@ void close()
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 
+	//Free global font
+	TTF_CloseFont(gFont);
+	gFont = NULL;
+	
 	//Destroy window
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -693,7 +755,7 @@ void spinCleanup()
 
 	SDL_SetRenderDrawColor(gRenderer, 132, 58, 89, 255);
 	SDL_RenderClear(gRenderer);
-
+	
 	reelOne.SymbolSetRender(reelOnePosition);
 	reelTwo.SymbolSetRender(reelTwoPosition);
 	reelThree.SymbolSetRender(reelThreePosition);
@@ -702,6 +764,8 @@ void spinCleanup()
 
 	//Render background texture to screen
 	gBackgroundTexture.render(0, 0, gRenderer);
+	
+
 
 	//Update screen
 	SDL_RenderPresent(gRenderer);

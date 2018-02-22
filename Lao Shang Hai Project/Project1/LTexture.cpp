@@ -2,7 +2,9 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-
+#include <stdio.h>
+#include <string>
+#include <cmath>
 
 LTexture::LTexture()
 {
@@ -39,7 +41,7 @@ bool LTexture::loadFromFile(std::string path, SDL_Renderer* gRenderer)
 	{
 		//Color key image
 		SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
-		//Create texture from sufrace pixels
+		//Create texture from surface pixels
 		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 		if (newTexture == NULL)
 		{
@@ -82,11 +84,21 @@ bool LTexture::loadFromRenderedText(TTF_Font *gFont, std::string textureText, SD
 		{
 			printf("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
 		}
+		else
+		{
+			//Get image dimensions
+			mWidth = textSurface->w;
+			mHeight = textSurface->h;
 
+		}
 
+		//Get rid of old surface
+		SDL_FreeSurface(textSurface);
 
 	}
-	return true;
+
+	//Return Success
+	return mTexture !=NULL;
 
 }
 
