@@ -18,6 +18,9 @@ const int SCREEN_HEIGHT = 900;
 //Symbols per reel constant
 const int SYMBOLS_PER_REEL = 32;
 
+//Number of reels
+const int NUMBER_OF_REELS = 5;
+
 //Symbol size dimension constants
 const int SYMBOL_WIDTH = 200;
 const int SYMBOL_HEIGHT = 200;
@@ -31,21 +34,12 @@ const int NUMBER_OF_SYMBOL_SPRITES = 10;
 //Reel Increment/Speed
 const int reelSpeed = 10000;
 
-//Testing Reel destination variables
-/*
-int reelOneDestination = 20000;
-int reelTwoDestination = 660000;
-int reelThreeDestination = 280000;
-int reelFourDestination = 200000;
-int reelFiveDestination = 60000;
-*/
-
 //Reel stop boolean checks
-bool reelOneStop;
-bool reelTwoStop;
-bool reelThreeStop;
-bool reelFourStop;
-bool reelFiveStop;
+bool reelOneStop = true;
+bool reelTwoStop = true;
+bool reelThreeStop = true;
+bool reelFourStop = true;
+bool reelFiveStop = true;
 
 //Reel layouts
 char reelArrayOne[SYMBOLS_PER_REEL] = { 'M', 'T', 'A', 'W', 'N', 'T', 'Q', 'J', 'N', 'K', 'J', 'A', 'S', 'N', 'K', 'J', 'A', 'T', 'P', 'Q', 'A', 'P', 'K', 'T', 'M', 'J', 'Q', 'P', 'K', 'Q', 'A', 'N' };
@@ -93,11 +87,25 @@ bool setSymbols();
 
 void spinCleanup();
 
+//Reel Spinning Function
+void spinReelsRandom();
+
+//Event Filter
+int eventFilter(void * userdata, SDL_Event * e)
+{
+
+	if (e->type == SDLK_SPACE) return 0;
+	return 1;
+
+}
+
 ////////////////////////////////////// Flags //////////////////////////////////////
 
 //Main loop flag
 bool quit = false;
 
+//Tracks if the reels are spinning or not. By default, the reels are not spinning
+bool isSpinning = false;
 
 ////////////////////////////////////// Classes //////////////////////////////////////
 
@@ -175,7 +183,7 @@ LTexture gSymbolSheetTexture;
 //Rectangles for pulling individual symbols from the symbol sheet
 SDL_Rect gSymbolClips[NUMBER_OF_SYMBOL_SPRITES];
 
-//Creates reel objects
+//Create reel objects, giving each their X (horizontal) positions which do not change, and their arrays
 Reel reelOne(100, reelArrayOne);
 Reel reelTwo(325, reelArrayTwo);
 Reel reelThree(550, reelArrayThree);
@@ -208,208 +216,75 @@ int main(int argc, char* args[])
 		printf("Failed to initialize!\n");
 		SDL_Delay(2000);
 	}
+
 	else
+
 	{
 		//Load media
-		if (!loadMedia()){
+		if (!loadMedia())
+		{
 			printf("Failed to load media!\n");
 			SDL_Delay(10000);
 		}
+
 		else
+
 		{
+			//While application is running
+			while (!quit)
+			{
+				while (SDL_PollEvent(&e) != 0)
+				{			
+					
+					// When an event is polled, this sets a filter to stop polling for more events until that action is completed.
+					// Note: This is what's stopping the repeated spins, however it has disabled the quit functionality.
+					SDL_SetEventFilter(eventFilter, 0); 
 
-				//While application is running
-				while (!quit)
-				{
-					while (SDL_PollEvent(&e) != 0)
+					switch (e.type)
+
 					{
-						if (e.type == SDL_QUIT)
+					
+					case SDL_QUIT:
+
+						quit = true;
+
+						break;
+
+					case SDL_KEYDOWN:
+
+						switch (e.key.keysym.sym)
 						{
-							quit = true;
+						case SDLK_SPACE:
+							//SDL_SetEventFilter(eventFilter, 0);
+							//Function that continuously spins the reels until they reach a random destination
+							spinReelsRandom();
+
+							SDL_Delay(50);
+
+							//SDL_SetEventFilter(NULL, NULL);
+
+							break;
 						}
+						case SDLK_0:
 
-						/*
-						Starts monitoring for keystrokes here:
-						*/
+							cout << "This works";
 
-						switch (e.type)
+						break;
 
-						{
-						case SDLK_DOWN:
-							reelOnePosition += reelSpeed;  break;
-
-						case SDLK_UP:
-							reelOnePosition -= reelSpeed;  break;
-
-						case SDL_KEYUP:
-
-							if (e.key.keysym.sym == SDLK_SPACE){
-
-								if (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == true && reelFiveStop == true)
-								{
-									reelOneStop = false;
-									reelTwoStop = false;
-									reelThreeStop = false;
-									reelFourStop = false;
-									reelFiveStop = false;
-								}
-
-								//Set reel destinations to random values
-
-								srand(time(0));
-								//int sample = (rand(0)%32);
-
-								int reelOneDestination = 20000 + ((1 + rand() % 32) * 20000);
-								int reelTwoDestination = 20000 + ((1 + rand() % 32) * 20000);
-								int reelThreeDestination = 20000 + ((1 + rand() % 32) * 20000);
-								int reelFourDestination = 20000 + ((1 + rand() % 32) * 20000);
-								int reelFiveDestination = 20000 + ((1 + rand() % 32) * 20000);
-
-
-
-								//Spin until the last reel is in position
-								while (reelOneStop == false)
-								{
-
-									//Move all the reels until reel one reaches its destination
-									//Once the first reel reaches its destination, mark it as stopped
-									if (reelOnePosition == reelOneDestination || reelOnePosition == reelOneDestination + (SYMBOL_SET_LENGTH * 100))
-									{
-										reelOneStop = true;
-									}
-									else
-									{
-										reelOnePosition += reelSpeed;
-										reelTwoPosition += reelSpeed;
-										reelThreePosition += reelSpeed;
-										reelFourPosition += reelSpeed;
-										reelFivePosition += reelSpeed;
-									}
-
-									spinCleanup();
-
-
-								}
-
-								while (reelOneStop == true && reelTwoStop == false)
-								{
-
-									//Move all the reels until reel one reaches its destination
-									//Once the first reel reaches its destination, mark it as stopped
-									if (reelTwoPosition == reelTwoDestination || reelTwoPosition == reelTwoDestination + (SYMBOL_SET_LENGTH * 100))
-									{
-										reelTwoStop = true;
-									}
-									else
-									{
-										reelTwoPosition += reelSpeed;
-										reelThreePosition += reelSpeed;
-										reelFourPosition += reelSpeed;
-										reelFivePosition += reelSpeed;
-									}
-									spinCleanup();
-								}
-
-								while (reelOneStop == true && reelTwoStop == true && reelThreeStop == false)
-								{
-
-									//Move all the reels until reel one reaches its destination
-									//Once the first reel reaches its destination, mark it as stopped
-									if (reelThreePosition == reelThreeDestination || reelThreePosition == reelThreeDestination + (SYMBOL_SET_LENGTH * 100))
-									{
-										reelThreeStop = true;
-									}
-									else
-									{
-										reelThreePosition += reelSpeed;
-										reelFourPosition += reelSpeed;
-										reelFivePosition += reelSpeed;
-									}
-									spinCleanup();
-								}
-
-								while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == false)
-								{
-
-									//Move all the reels until reel four reaches its destination
-									//Once the fourth reel reaches its destination, mark it as stopped
-									if (reelFourPosition == reelFourDestination || reelFourPosition == reelFourDestination + (SYMBOL_SET_LENGTH * 100))
-									{
-										reelFourStop = true;
-									}
-									else
-									{
-										reelFourPosition += reelSpeed;
-										reelFivePosition += reelSpeed;
-									}
-									spinCleanup();
-								}
-
-								while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == true && reelFiveStop == false)
-								{
-
-									//Move all the reels until reel five reaches its destination
-									//Once the first reel reaches its destination, mark it as stopped
-									if (reelFivePosition == reelFiveDestination || reelFivePosition == reelFiveDestination + (SYMBOL_SET_LENGTH * 100))
-									{
-										reelFiveStop = true;
-									}
-									else
-									{
-										reelFivePosition += reelSpeed;
-									}
-									spinCleanup();
-								}
-
-								SDL_Delay(500);
-
-								break;
-
-
-							}
-						}
 					}
-					
-					//Keystates Go Here
-					const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-					if (currentKeyStates[SDL_SCANCODE_Q])
-					{
-						std::cout << "Press Count" << std::endl;
-					}
-
-
-
-				
-					//Clear screen			
-					SDL_SetRenderDrawColor(gRenderer, 132, 58, 89, 255);
-					SDL_RenderClear(gRenderer);
-					
-					reelOne.SymbolSetRender(reelOnePosition);
-					reelTwo.SymbolSetRender(reelTwoPosition);
-					reelThree.SymbolSetRender(reelThreePosition);
-					reelFour.SymbolSetRender(reelFourPosition);
-					reelFive.SymbolSetRender(reelFivePosition);
-					
-					//Render background texture to screen
-					gBackgroundTexture.render(0, 0, gRenderer);
-
-					//Render test text to screen
-					gTextTexture.render(300, 500, gRenderer);
-
-					//Update screen
-					SDL_RenderPresent(gRenderer);
-					
-				
+					//Final Spin Cleanup
+					spinCleanup();
+					//SDL_SetEventFilter(NULL, NULL);
 				}
 			}
 		}
-	
-
+	}
 	return 0;
 }
 	
 
-bool loadMedia(){
+bool loadMedia()
+{
 
 	//Loading success flag
 	bool success = true;
@@ -427,10 +302,10 @@ bool loadMedia(){
 	{
 
 		//Render and Load Static text
-		SDL_Color textColor = { 0, 0, 0 };
-		if (!gTextTexture.loadFromRenderedText(gFont, "The quick brown fox jumps over the lazy dog", textColor, gRenderer))
+		SDL_Color textColor = { 255, 0, 0 };
+		if (!gTextTexture.loadFromRenderedText(gFont, "Credits", textColor, gRenderer))
 		{
-			printf("Failed to render text texture!\n");
+			printf("Failed to render text textures!\n");
 			success = false;
 		}
 
@@ -727,6 +602,131 @@ void Reel::SymbolRender(char charFromReelArray, int symbolOffset)
 
 }
 
+//Function that spins the reels to random positions once started
+void spinReelsRandom()
+{
+
+	
+	if (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == true && reelFiveStop == true)
+	{
+
+		//Set reel destinations to random values
+		srand(time(0));
+
+		int reelOneDestination = 20000 + ((1 + rand() % 32) * 20000);
+		int reelTwoDestination = 20000 + ((1 + rand() % 32) * 20000);
+		int reelThreeDestination = 20000 + ((1 + rand() % 32) * 20000);
+		int reelFourDestination = 20000 + ((1 + rand() % 32) * 20000);
+		int reelFiveDestination = 20000 + ((1 + rand() % 32) * 20000);
+
+		// Flag each reel as not being its destination
+		reelOneStop = false;
+		reelTwoStop = false;
+		reelThreeStop = false;
+		reelFourStop = false;
+		reelFiveStop = false;
+
+		//Spin until the last reel is in position
+		while (reelOneStop == false)
+		{
+
+			//Move all the reels until reel one reaches its destination
+			//Once the first reel reaches its destination, mark it as stopped
+			if (reelOnePosition == reelOneDestination || reelOnePosition == reelOneDestination + (SYMBOL_SET_LENGTH * 100))
+			{
+				reelOneStop = true;
+			}
+			else
+			{
+				reelOnePosition += reelSpeed;
+				reelTwoPosition += reelSpeed;
+				reelThreePosition += reelSpeed;
+				reelFourPosition += reelSpeed;
+				reelFivePosition += reelSpeed;
+			}
+
+			spinCleanup();
+
+
+		}
+
+		while (reelOneStop == true && reelTwoStop == false)
+		{
+
+			//Move all the reels except one until reel two reaches its destination
+			//Once the second reel reaches its destination, mark it as stopped
+			if (reelTwoPosition == reelTwoDestination || reelTwoPosition == reelTwoDestination + (SYMBOL_SET_LENGTH * 100))
+			{
+				reelTwoStop = true;
+			}
+			else
+			{
+				reelTwoPosition += reelSpeed;
+				reelThreePosition += reelSpeed;
+				reelFourPosition += reelSpeed;
+				reelFivePosition += reelSpeed;
+			}
+			spinCleanup();
+		}
+
+		while (reelOneStop == true && reelTwoStop == true && reelThreeStop == false)
+		{
+
+			//Move all the reels until reel one reaches its destination
+			//Once the first reel reaches its destination, mark it as stopped
+			if (reelThreePosition == reelThreeDestination || reelThreePosition == reelThreeDestination + (SYMBOL_SET_LENGTH * 100))
+			{
+				reelThreeStop = true;
+			}
+			else
+			{
+				reelThreePosition += reelSpeed;
+				reelFourPosition += reelSpeed;
+				reelFivePosition += reelSpeed;
+			}
+			spinCleanup();
+		}
+
+		while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == false)
+		{
+
+			//Move all the reels until reel four reaches its destination
+			//Once the fourth reel reaches its destination, mark it as stopped
+			if (reelFourPosition == reelFourDestination || reelFourPosition == reelFourDestination + (SYMBOL_SET_LENGTH * 100))
+			{
+				reelFourStop = true;
+			}
+			else
+			{
+				reelFourPosition += reelSpeed;
+				reelFivePosition += reelSpeed;
+			}
+			spinCleanup();
+		}
+
+		while (reelOneStop == true && reelTwoStop == true && reelThreeStop == true && reelFourStop == true && reelFiveStop == false)
+		{
+
+			//Move all the reels until reel five reaches its destination
+			//Once the fifth reel reaches its destination, mark it as stopped
+			if (reelFivePosition == reelFiveDestination || reelFivePosition == reelFiveDestination + (SYMBOL_SET_LENGTH * 100))
+			{
+				reelFiveStop = true;
+				// When the last reels stops, the reels are no longer considered spinning
+
+			}
+			else
+			{
+				reelFivePosition += reelSpeed;
+			}
+			spinCleanup();
+		}
+
+
+	}
+	isSpinning = false;
+}
+
 //Cleans up after each spin to preserve loop function and render reels / background
 void spinCleanup()
 {
@@ -753,7 +753,7 @@ void spinCleanup()
 	}
 
 
-	SDL_SetRenderDrawColor(gRenderer, 132, 58, 89, 255);
+	SDL_SetRenderDrawColor(gRenderer, 232, 0, 0, 255);
 	SDL_RenderClear(gRenderer);
 	
 	reelOne.SymbolSetRender(reelOnePosition);
