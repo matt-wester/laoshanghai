@@ -4,6 +4,7 @@
 #include <SDL_ttf.h>
 #include <stdio.h>
 #include <string>
+#include <sstream>
 #include <ctime>
 #include <stdlib.h>
 #include "LTexture.h"
@@ -14,8 +15,6 @@
 //Screen dimension constants
 const int SCREEN_WIDTH = 1300;
 const int SCREEN_HEIGHT = 900;
-const int SCREEN_FPS = 60;
-const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 
 //Symbols per reel constant
@@ -76,8 +75,11 @@ const char SYMBOL_NINE = 'N';
 
 //Betting Definitions
 
-// Variable that tracks the Player's total credits | Player starts with 10,000 credits
+// Numeric variable that tracks the Player's total credits | Player starts with 10,000 credits
 const int playerCredit = 10000;
+
+// Variable for credit text, used to render the numbered text on screen
+const string creditText;
 
 // Variable that tracks how many lines the player is betting | Defaults to 1 line bet (minimum)
 const int playerSelectedLine = 1;
@@ -101,11 +103,8 @@ bool setSymbols();
 // Renders the reels
 void spinCleanup();
 
-//Reel Spinning Function
+//Reel Spinning Function that takes random destinations for each of the reels
 bool spinReels(int reelOneDestination, int reelTwoDestination, int reelThreeDestination, int reelFourDestination, int reelFiveDestination);
-
-//Random Reel Destination Generator
-int generateRandomDestination();
 
 ////////////////////////////////////// Flags //////////////////////////////////////
 
@@ -129,7 +128,7 @@ public:
 	//Renders the reel
 	void Reel::ReelRender();
 	
-	//Tests  reel movement
+	//Tests reel movement
 	void Reel::TestIncrement();
 
 	//Uses the reel array to assign images to the image objects that will be rendered
@@ -144,9 +143,8 @@ public:
 	void Reel::SymbolRender(char charFromReelArray, int symbolOffset);
 
 
-
 private:
-	//Variables that control the position of the reels and the symbol set - xReelPos is passed into the object constructor and shared by both the reels and the symbol sets 
+	//Variables that control the position of the reels and the symbol set
 	int _xReelPos, _yReelPos;
 	int _ySymbolSetOffset;
 	
@@ -182,14 +180,20 @@ SDL_Renderer* gRenderer = NULL;
 //Globally used font
 TTF_Font *gFont = NULL;
 
+//Color used by the font renderer (for text that needs to be reloaded in the main loop)
+SDL_Color textColor = { 255, 0, 0 };
+
 //Background Texture
 LTexture gBackgroundTexture;
 
 //Reel Strip Texture
 LTexture gReelStripTexture;
 
-//Test Text Texture
-LTexture gTextTexture;
+//Credit Label Text Texture
+LTexture gCreditLabelTexture;
+
+//Credit Display Texture
+LTexture gCreditCountTexture;
 
 //Symbol Sheet Texture
 LTexture gSymbolSheetTexture;
@@ -198,7 +202,7 @@ LTexture gSymbolSheetTexture;
 SDL_Rect gSymbolClips[NUMBER_OF_SYMBOL_SPRITES];
 
 
-//Create reel objects, giving each their X (horizontal) positions, the default Y position, which do not change, and their arrays
+//Create reel objects, giving each their X (horizontal) positions, the default Y position, and the symbol arrays
 Reel reelOne(100, givenYPos, reelArrayOne);
 Reel reelTwo(325, givenYPos, reelArrayTwo);
 Reel reelThree(550, givenYPos, reelArrayThree);
@@ -214,11 +218,6 @@ Uint8 g = 255;
 Uint8 b = 255;
 Uint8 a = 255;
 
-int reelOnePosition;
-int reelTwoPosition;
-int reelThreePosition;
-int reelFourPosition;
-int reelFivePosition;
 
 //////////////////////// MAIN FUNCTION ///////////////////////////////////
 
@@ -259,15 +258,18 @@ int main(int argc, char* args[])
 				//Poll for events
 				while (SDL_PollEvent(&e) != 0)
 				{			
-				
+					
+					//Checks for a quit event and quits the program if we get one
 					if (e.type == SDL_QUIT)
 					{
 						quit = true;
 					}
 
 
+					//Checks for a space press
 					if (currentKeyState[SDL_SCANCODE_SPACE])
 					{
+						//Check if the reels aren't already spinning
 						if (isSpinning == false)
 						{
 							//initate the spin with the isSpinning flag
@@ -276,13 +278,13 @@ int main(int argc, char* args[])
 							//Generate random destinations for each reel
 							srand(time(0));
 
-							int reelOneDestination = 20000 + ((1 + rand() % 32) * 20000);
-							int reelTwoDestination = 20000 + ((1 + rand() % 32) * 20000);
-							int reelThreeDestination = 20000 + ((1 + rand() % 32) * 20000);
-							int reelFourDestination = 20000 + ((1 + rand() % 32) * 20000);
-							int reelFiveDestination = 20000 + ((1 + rand() % 32) * 20000);
+							reelOneDestination = 20000 + ((1 + rand() % 32) * 20000);
+							reelTwoDestination = 20000 + ((1 + rand() % 32) * 20000);
+							reelThreeDestination = 20000 + ((1 + rand() % 32) * 20000);
+							reelFourDestination = 20000 + ((1 + rand() % 32) * 20000);
+							reelFiveDestination = 20000 + ((1 + rand() % 32) * 20000);
 				
-
+							//Print the generated the destinations for testing
 							cout << reelOneDestination << endl;
 							cout << reelTwoDestination << endl;
 							cout << reelThreeDestination << endl;
@@ -298,6 +300,7 @@ int main(int argc, char* args[])
 						reelOne.TestIncrement();
 					}
 
+					//Allows the user to quit using the escape key
 					if (currentKeyState[SDL_SCANCODE_ESCAPE])
 					{
 						quit = true;
@@ -307,17 +310,32 @@ int main(int argc, char* args[])
 					
 				}
 
-				// Check if the isSpinning flag was flipped to true
+				// Check if the isSpinning flag was flipped to true after polling for events
 				if (isSpinning == true)
 				{
-					spinReels(reelOneDestination, reelTwoDestination, reelThreeDestination, reelFourDestination, reelFiveDestination);
+					//Increments the reels towards their destination if the reels are currently set to spin.
+					if (spinReels(reelOneDestination, reelTwoDestination, reelThreeDestination, reelFourDestination, reelFiveDestination) == true)
+					{
+						
+						//Flags the reels as no longer spinning here:
+						isSpinning = false;
+						cout << "successfully flagged a finished spin" << endl;
+						
+						//Functions that run once when a spin is complete should go here
+						//REQUIRED: Create temporary array of visible symbols for checking
+						//REQUIRED: Check each line's symbols
+						//REQUIRED: Calculate the total win
+						//REQUIRED: Display win amount, any win animations
+					}
 
+
+					
 				}
 
-				// ^End of Main Loop^
+				// End of game loop
 			}	
 		}
-	}	
+	}
 	return 0;
 }	
 
@@ -338,18 +356,20 @@ bool loadMedia()
 		
 	}
 	else
-	{
-
-		//Render and Load Static text
-		SDL_Color textColor = { 255, 0, 0 };
-		if (!gTextTexture.loadFromRenderedText(gFont, "Credits", textColor, gRenderer))
+		/*
 		{
-			printf("Failed to render text textures!\n");
+
+		
+		//Load credit label text
+		SDL_Color textColor = { 255, 0, 0 };
+		if (!gCreditLabelTexture.loadFromRenderedText(gFont, "Credits", textColor, gRenderer))
+		{
+			printf("Failed to render credit label texture!\n");
 			success = false;
 		}
 
 	}
-
+	*/
 
 	//load ReelStrip texture
 	if (!gReelStripTexture.loadFromFile("visualassets/reelstrip.png", gRenderer))
@@ -671,19 +691,7 @@ bool Reel::IncrementReel(bool previousReelStopped, int reelDestination)
 }
 
 
-//Function that returns a random destination for a reel
-int generateRandomDestination()
-{
-
-	srand(time(0));
-
-	int reelDestination = 20000 + ((1 + rand() % 32) * 20000);
-	
-	return reelDestination;
-
-}
-
-// A function that checks and increments each of the reels per tick. Does not render the reels, only advances their position.
+// A function that checks and increments each of the reels before a render. Returns TRUE if the reels have stopped, otherwise returns FALSE.
 bool spinReels(int reelOneDestination, int reelTwoDestination, int reelThreeDestination, int reelFourDestination, int reelFiveDestination)
 {
 
@@ -696,13 +704,15 @@ bool spinReels(int reelOneDestination, int reelTwoDestination, int reelThreeDest
 	reelFourStopped = reelFour.IncrementReel(reelThreeStopped, reelFourDestination);
 	reelFiveStopped = reelFive.IncrementReel(reelFourStopped, reelFiveDestination);
 
-	if (reelOneStopped == true && reelTwoStopped == true && reelThreeStopped == true && reelFourStopped == true && reelFiveStopped == true)
+	if (reelOneStopped == true && reelTwoStopped == true && reelThreeStopped == true && reelFourStopped == true && reelFiveStopped == true && isSpinning == true)
 	{
-		SDL_Delay(25);
-		isSpinning = false;
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 
-	return true;
 }
 
 //Cleans up after each spin to preserve loop function and render reels / background
@@ -721,6 +731,18 @@ void spinCleanup()
 	//Render background texture to screen
 	gBackgroundTexture.render(0, 0, gRenderer);
 	
+	//Render credit label text
+	gCreditLabelTexture.render(750, 840, gRenderer, NULL);
+
+	//Convert credits into text
+	std::string creditText = "Credits: " + std::to_string(playerCredit);
+
+	//Load new credit texture equal the the player's credits
+	gCreditCountTexture.loadFromRenderedText(gFont, creditText, textColor, gRenderer);
+	
+	//Render the new credit texture
+	gCreditCountTexture.render(880, 840, gRenderer,NULL);
+
 	//Update screen
 	SDL_RenderPresent(gRenderer);
 

@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 
+
 LTexture::LTexture()
 {
 	//Initialize
@@ -15,7 +16,6 @@ LTexture::LTexture()
 
 }
 
-
 LTexture::~LTexture()
 {
 	//Deallocate
@@ -23,6 +23,7 @@ LTexture::~LTexture()
 
 }
 
+//Takes an image file path to an image and generates a texture
 bool LTexture::loadFromFile(std::string path, SDL_Renderer* gRenderer)
 {
 	//Get rid of preexisting texture
@@ -65,6 +66,7 @@ bool LTexture::loadFromFile(std::string path, SDL_Renderer* gRenderer)
 	
 }
 
+//Takes a font file path and text to generate a texture
 bool LTexture::loadFromRenderedText(TTF_Font *gFont, std::string textureText, SDL_Color textColor, SDL_Renderer* gRenderer)
 {
 	//Get rid of preexisting texture
@@ -102,7 +104,7 @@ bool LTexture::loadFromRenderedText(TTF_Font *gFont, std::string textureText, SD
 
 }
 
-
+//Destroys the texture
 void LTexture::free()
 {
 	//Free texture if it exsits
@@ -115,7 +117,8 @@ void LTexture::free()
 	}
 }
 
-
+//Takes an X and Y coordinate and renders the object texture.
+//Last parameter is NULL if the texture doesn't need to be clipped, otherwise, pass the appropriate rectangle
 void LTexture::render(int x, int y, SDL_Renderer* gRenderer, SDL_Rect* clip)
 {
 	//Set rendering space
@@ -133,7 +136,7 @@ void LTexture::render(int x, int y, SDL_Renderer* gRenderer, SDL_Rect* clip)
 	
 }
 
-
+//Sets texture color
 void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
 {
 	//Modulate texture
@@ -148,6 +151,7 @@ void LTexture::setBlendMode(SDL_BlendMode blending)
 	SDL_SetTextureBlendMode(mTexture, blending);
 }
 
+//Sets texture alpha
 void LTexture::setAlpha(Uint8 alpha)
 {
 	//Modulate texture alpha
